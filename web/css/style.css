@@ -112,15 +112,15 @@ body {
     margin-bottom: 1.75rem;
 }
 
-.login-form-row {
+#login-form {
     display: flex;
-    gap: 0.6rem;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .login-input {
-    flex: 1;
-    padding: 0.85rem 1rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
     background: var(--bg);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
@@ -137,29 +137,22 @@ body {
 
 .login-input::placeholder { color: var(--text-muted); }
 
-.login-submit {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.login-btn {
+    width: 100%;
+    padding: 0.85rem;
     background: var(--accent);
     border: none;
-    color: white;
-    cursor: pointer;
     border-radius: var(--radius-sm);
-    flex-shrink: 0;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
     transition: all 0.2s var(--ease);
 }
 
-.login-submit:hover { background: var(--accent-hover); }
-.login-submit:active { transform: scale(0.93); }
-.login-submit:disabled { opacity: 0.5; cursor: default; }
-
-.login-form-row.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
+.login-btn:hover { background: var(--accent-hover); }
+.login-btn:active { transform: scale(0.98); }
+.login-btn:disabled { opacity: 0.5; cursor: default; }
 
 
 .error {

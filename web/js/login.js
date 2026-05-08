@@ -17,14 +17,13 @@
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errorEl = document.getElementById('error');
-    const submitBtn = document.getElementById('submit-btn');
-    const formRow = document.getElementById('login-row');
+    const btn = document.getElementById('submit-btn');
     errorEl.hidden = true;
 
     const password = document.getElementById('password').value;
 
-    submitBtn.disabled = true;
-    formRow.classList.add('loading');
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
 
     try {
         const res = await fetch('/api/login', {
@@ -36,16 +35,16 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         if (res.status === 429) {
             errorEl.textContent = 'Too many attempts. Try again later.';
             errorEl.hidden = false;
-            submitBtn.disabled = false;
-            formRow.classList.remove('loading');
+            btn.disabled = false;
+            btn.textContent = 'Enter';
             return;
         }
 
         if (!res.ok) {
             errorEl.textContent = 'Invalid password.';
             errorEl.hidden = false;
-            submitBtn.disabled = false;
-            formRow.classList.remove('loading');
+            btn.disabled = false;
+            btn.textContent = 'Enter';
             document.getElementById('password').select();
             return;
         }
@@ -58,7 +57,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     } catch (err) {
         errorEl.textContent = 'Connection error. Please try again.';
         errorEl.hidden = false;
-        submitBtn.disabled = false;
-        formRow.classList.remove('loading');
+        btn.disabled = false;
+        btn.textContent = 'Enter';
     }
 });

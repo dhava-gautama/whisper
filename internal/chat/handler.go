@@ -132,6 +132,8 @@ func handleMessage(hub *Hub, database *sql.DB, user *auth.ContextUser, conn *Con
 			kind = "image"
 		} else if strings.HasPrefix(media.ContentType, "audio/") {
 			kind = "voice"
+		} else if strings.HasPrefix(media.ContentType, "video/") {
+			kind = "video"
 		} else {
 			kind = "file"
 		}

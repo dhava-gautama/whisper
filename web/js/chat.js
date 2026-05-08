@@ -606,6 +606,13 @@
                     audio.src = '/api/media/' + msg.media.id;
                     audio.className = 'media-audio';
                     bubble.appendChild(audio);
+                } else if (msg.media.content_type.startsWith('video/') || msg.kind === 'video') {
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.preload = 'metadata';
+                    video.src = '/api/media/' + msg.media.id;
+                    video.className = 'media-video';
+                    bubble.appendChild(video);
                 } else {
                     const link = document.createElement('a');
                     link.href = '/api/media/' + msg.media.id;

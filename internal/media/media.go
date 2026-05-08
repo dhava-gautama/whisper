@@ -32,6 +32,8 @@ var allowedMIME = map[string]bool{
 	"audio/wav":                true,
 	"video/webm":               true,
 	"video/ogg":                true,
+	"video/mp4":                true,
+	"video/quicktime":          true,
 	"application/octet-stream": true,
 }
 
@@ -80,7 +82,8 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		ext := strings.ToLower(path.Ext(header.Filename))
 		extMap := map[string]string{
 			".webm": "audio/webm", ".ogg": "audio/ogg", ".mp3": "audio/mpeg",
-			".mp4": "audio/mp4", ".wav": "audio/wav", ".m4a": "audio/mp4",
+			".wav": "audio/wav", ".m4a": "audio/mp4",
+			".mp4": "video/mp4", ".mov": "video/quicktime", ".avi": "video/x-msvideo",
 			".pdf": "application/pdf", ".zip": "application/zip",
 			".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
 			".gif": "image/gif", ".webp": "image/webp",
@@ -95,8 +98,8 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Normalize video/webm to audio/webm for voice recordings
-	if contentType == "video/webm" || contentType == "video/ogg" {
+	// Normalize video/webm to audio/webm only for voice recordings (filename starts with "voice")
+	if (contentType == "video/webm" || contentType == "video/ogg") && strings.HasPrefix(strings.ToLower(header.Filename), "voice") {
 		contentType = strings.Replace(contentType, "video/", "audio/", 1)
 	}
 

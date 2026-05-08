@@ -114,11 +114,10 @@ body {
 
 .input-group {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     background: var(--bg);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
-    overflow: hidden;
     transition: all 0.2s var(--ease);
 }
 
@@ -135,13 +134,13 @@ body {
     color: var(--text);
     font-size: 1rem;
     outline: none;
+    min-width: 0;
 }
 
 .input-group input::placeholder { color: var(--text-muted); }
 
 .input-group button {
-    width: 48px;
-    height: 48px;
+    width: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -151,6 +150,7 @@ body {
     cursor: pointer;
     transition: background 0.2s var(--ease);
     flex-shrink: 0;
+    border-radius: 0 calc(var(--radius-sm) - 1px) calc(var(--radius-sm) - 1px) 0;
 }
 
 .input-group button:hover { background: var(--accent-hover); }
@@ -721,33 +721,45 @@ header {
 /* Overflow menu */
 .overflow-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 6px);
     right: 0;
-    margin-top: 0.3rem;
-    background: var(--bg-card);
+    background: var(--bg-surface);
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-    padding: 0.3rem;
-    min-width: 160px;
+    border-radius: 12px;
+    padding: 0.35rem;
+    min-width: 170px;
     z-index: 50;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    animation: menuIn 0.15s var(--ease);
+}
+@keyframes menuIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .overflow-menu button {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
-    padding: 0.55rem 0.8rem;
+    padding: 0.6rem 0.9rem;
     background: transparent;
     border: none;
     color: var(--text);
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     text-align: left;
     cursor: pointer;
-    border-radius: var(--radius-xs);
-    transition: background 0.15s var(--ease);
+    border-radius: 8px;
+    transition: background 0.12s var(--ease);
+    gap: 0.6rem;
 }
-.overflow-menu button:hover { background: var(--bg-surface); }
+.overflow-menu button:hover { background: rgba(255,255,255,0.06); }
+.overflow-menu button:active { background: rgba(255,255,255,0.1); }
 .overflow-menu button.danger { color: var(--danger); }
-.overflow-menu button.danger:hover { background: rgba(239,68,68,0.08); }
+.overflow-menu button.danger:hover { background: rgba(239,68,68,0.1); }
+.overflow-menu hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.25rem 0.5rem;
+}
 
 /* Search */
 .search-bar {
@@ -1224,20 +1236,25 @@ body.light .login-logo { background: linear-gradient(135deg, #e87aab, #d4467a); 
     position: fixed;
     width: 10px;
     height: 10px;
-    background: radial-gradient(ellipse at center, #ffb7d1 0%, #ff8fb8 50%, transparent 70%);
+    background: #ffb7d1;
     border-radius: 50% 0 50% 50%;
     opacity: 0;
     pointer-events: none;
     z-index: 0;
+    will-change: transform, opacity;
+    contain: strict;
     animation: petalFall linear infinite;
 }
 
 @keyframes petalFall {
-    0% { opacity: 0; transform: translateY(-20px) rotate(0deg) scale(0.8); }
-    10% { opacity: 0.6; }
-    90% { opacity: 0.4; }
-    100% { opacity: 0; transform: translateY(100vh) rotate(360deg) scale(0.4); }
+    0% { opacity: 0; transform: translateY(-20px) rotate(0deg); }
+    10% { opacity: 0.5; }
+    90% { opacity: 0.3; }
+    100% { opacity: 0; transform: translateY(100vh) rotate(360deg); }
 }
+
+/* Pause petals when tab is hidden */
+.petals-paused .petal { animation-play-state: paused; }
 
 body.light .petal {
     background: radial-gradient(ellipse at center, #ffcce0 0%, #ffaacf 50%, transparent 70%);

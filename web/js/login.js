@@ -1,14 +1,15 @@
-// Sakura petals (fewer on mobile)
+// Sakura petals (lightweight)
 (function() {
-    const count = window.innerWidth < 600 ? 8 : 20;
+    const count = window.innerWidth < 600 ? 4 : 8;
     for (let i = 0; i < count; i++) {
         const p = document.createElement('div');
         p.className = 'petal';
         p.style.left = Math.random() * 100 + 'vw';
-        p.style.animationDuration = (5 + Math.random() * 8) + 's';
-        p.style.animationDelay = (Math.random() * 8) + 's';
-        p.style.width = (7 + Math.random() * 10) + 'px';
-        p.style.height = p.style.width;
+        p.style.animationDuration = (8 + Math.random() * 10) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        const size = (6 + Math.random() * 6) + 'px';
+        p.style.width = size;
+        p.style.height = size;
         document.body.appendChild(p);
     }
 })();

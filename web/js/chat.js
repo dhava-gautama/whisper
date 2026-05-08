@@ -3,20 +3,25 @@
     const currentUserID = parseInt(sessionStorage.getItem('user_id'));
     if (!csrfToken || !currentUserID) { window.location.href = '/'; return; }
 
-    // Sakura petals (fewer on mobile)
+    // Sakura petals (lightweight)
     (function spawnPetals() {
         const isMobile = window.innerWidth < 600;
-        const COUNT = isMobile ? 6 : 15;
+        const COUNT = isMobile ? 4 : 8;
         for (let i = 0; i < COUNT; i++) {
             const p = document.createElement('div');
             p.className = 'petal';
             p.style.left = Math.random() * 100 + 'vw';
-            p.style.animationDuration = (6 + Math.random() * 8) + 's';
-            p.style.animationDelay = (Math.random() * 10) + 's';
-            p.style.width = (6 + Math.random() * 8) + 'px';
-            p.style.height = p.style.width;
+            p.style.animationDuration = (8 + Math.random() * 10) + 's';
+            p.style.animationDelay = (Math.random() * 12) + 's';
+            const size = (6 + Math.random() * 6) + 'px';
+            p.style.width = size;
+            p.style.height = size;
             document.body.appendChild(p);
         }
+        // Pause when tab hidden to save CPU
+        document.addEventListener('visibilitychange', () => {
+            document.body.classList.toggle('petals-paused', document.hidden);
+        });
     })();
 
     // DOM refs

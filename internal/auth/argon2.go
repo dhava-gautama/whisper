@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	argonMemory      = 64 * 1024
-	argonIterations  = 1
+	argonMemory      = 16 * 1024 // 16MB — sufficient for small user count, saves ~100MB RSS
+	argonIterations  = 3        // more iterations compensates for less memory
 	argonParallelism = 4
 	argonSaltLen     = 16
 	argonKeyLen      = 32

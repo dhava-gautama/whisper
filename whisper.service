@@ -1,0 +1,17 @@
+[Unit]
+Description=Whisper Chat
+After=network.target
+
+[Service]
+Type=simple
+User=dhava
+WorkingDirectory=/mnt/hdd/rocket/whisper
+ExecStart=/mnt/hdd/rocket/whisper/whisper
+Restart=always
+RestartSec=3
+
+Environment=WHISPER_ADDR=:3333
+Environment=WHISPER_DEV=true
+
+[Install]
+WantedBy=multi-user.target

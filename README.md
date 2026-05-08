@@ -1,6 +1,6 @@
 # Whisper
 
-Private self-hosted chat room for two. Sakura Falls theme.
+Private self-hosted group chat. Sakura Falls theme.
 
 ![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go)
 ![SQLite](https://img.shields.io/badge/SQLite-encrypted-003B57?logo=sqlite)
@@ -163,15 +163,28 @@ sudo systemctl enable --now whisper
 
 ## Configuration
 
-All configuration is via environment variables:
+### Users (`users.json`)
+
+Create a `users.json` file with your users (supports any number of users):
+
+```json
+[
+  {"name": "alice", "password": "secure_password_1"},
+  {"name": "bob", "password": "secure_password_2"},
+  {"name": "charlie", "password": "secure_password_3"}
+]
+```
+
+Each user logs in with just their password — no username needed. Passwords are hashed with Argon2id at startup and never stored in plaintext.
+
+> **Backward compatible**: If no `users.json` exists, falls back to `WHISPER_USER1_PASS` / `WHISPER_USER2_PASS` environment variables (2-user mode).
+
+### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `WHISPER_ADDR` | `:8080` | Listen address |
-| `WHISPER_USER1_NAME` | `alice` | Display name for user 1 |
-| `WHISPER_USER1_PASS` | *required* | Password for user 1 |
-| `WHISPER_USER2_NAME` | `bob` | Display name for user 2 |
-| `WHISPER_USER2_PASS` | *required* | Password for user 2 |
+| `WHISPER_USERS_FILE` | `./users.json` | Path to users config |
 | `WHISPER_DB_PATH` | `./data/whisper.db` | SQLite database path |
 | `WHISPER_DB_KEY` | *(empty)* | SQLCipher encryption key |
 | `WHISPER_MEDIA_DIR` | `./data/media` | Media storage directory |
@@ -182,8 +195,9 @@ All configuration is via environment variables:
 ## Architecture
 
 ```
-Browser A ←WSS→ [Caddy TLS] ←→ [Go Server] ←→ [SQLite + Files]
+Browser A ←WSS→ [Caddy/Cloudflare] ←→ [Go Server] ←→ [SQLite + Files]
 Browser B ←WSS→
+Browser C ←WSS→
 ```
 
 - Single Go binary (12.5 MB)

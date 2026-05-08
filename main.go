@@ -42,20 +42,15 @@ func main() {
 	}
 
 	// Hash passwords at startup
-	hash1, err := auth.HashPassword(cfg.User1.RawPass)
-	if err != nil {
-		slog.Error("hash user1 password", "error", err)
-		os.Exit(1)
+	for i := range cfg.Users {
+		hash, err := auth.HashPassword(cfg.Users[i].Password)
+		if err != nil {
+			slog.Error("hash password", "user", cfg.Users[i].Name, "error", err)
+			os.Exit(1)
+		}
+		cfg.Users[i].PassHash = hash
+		cfg.Users[i].Password = ""
 	}
-	hash2, err := auth.HashPassword(cfg.User2.RawPass)
-	if err != nil {
-		slog.Error("hash user2 password", "error", err)
-		os.Exit(1)
-	}
-	cfg.User1.PassHash = hash1
-	cfg.User1.RawPass = ""
-	cfg.User2.PassHash = hash2
-	cfg.User2.RawPass = ""
 
 	// Open database
 	database, err := db.Open(cfg.DBPath, cfg.DBKey)
@@ -66,14 +61,13 @@ func main() {
 	defer database.Close()
 
 	// Seed users
-	if _, err := db.UpsertUser(database, cfg.User1.Name, cfg.User1.PassHash); err != nil {
-		slog.Error("upsert user1", "error", err)
-		os.Exit(1)
+	for _, u := range cfg.Users {
+		if _, err := db.UpsertUser(database, u.Name, u.PassHash); err != nil {
+			slog.Error("upsert user", "user", u.Name, "error", err)
+			os.Exit(1)
+		}
 	}
-	if _, err := db.UpsertUser(database, cfg.User2.Name, cfg.User2.PassHash); err != nil {
-		slog.Error("upsert user2", "error", err)
-		os.Exit(1)
-	}
+	slog.Info("users configured", "count", len(cfg.Users))
 
 	// Start session purge goroutine
 	go func() {
@@ -202,10 +196,10 @@ func handleLogin(w http.ResponseWriter, r *http.Request, database *sql.DB, cfg *
 		return
 	}
 
-	// Try password against both users
+	// Try password against all configured users
 	var user *db.User
-	for _, name := range []string{cfg.User1.Name, cfg.User2.Name} {
-		u, err := db.GetUserByUsername(database, name)
+	for _, uc := range cfg.Users {
+		u, err := db.GetUserByUsername(database, uc.Name)
 		if err != nil {
 			continue
 		}

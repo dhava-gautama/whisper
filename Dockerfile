@@ -12,6 +12,7 @@ RUN adduser -D -u 1000 whisper
 WORKDIR /app
 COPY --from=builder /bin/whisper .
 COPY web/ ./web/
+COPY users.json* ./
 RUN mkdir -p /app/data/media && chown -R whisper:whisper /app/data
 USER whisper
 EXPOSE 8080

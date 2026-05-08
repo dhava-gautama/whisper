@@ -428,6 +428,15 @@ header {
     border-bottom-left-radius: 4px;
 }
 
+/* Sender name label */
+.sender-name {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.15rem;
+}
+
 .bubble .text {
     margin: 0;
     font-size: 0.875rem;

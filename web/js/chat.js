@@ -545,6 +545,18 @@
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
 
+        // Sender name (for group chats / non-mine messages)
+        if (!isMine) {
+            const prev = messageList.lastElementChild;
+            const prevUid = prev?.dataset?.uid;
+            if (!prevUid || parseInt(prevUid) !== msg.user.id) {
+                const nameLabel = document.createElement('span');
+                nameLabel.className = 'sender-name';
+                nameLabel.textContent = msg.user.username;
+                bubble.appendChild(nameLabel);
+            }
+        }
+
         // Reply preview
         if (msg.reply_to) {
             const rp = document.createElement('div');

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -8,22 +9,21 @@ import (
 )
 
 type UserConfig struct {
-	Name     string
-	PassHash string // set after startup hashing
-	RawPass  string // cleared after hashing
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	PassHash string `json:"-"`
 }
 
 type Config struct {
-	Addr         string
-	User1        UserConfig
-	User2        UserConfig
-	DBPath       string
-	DBKey        string
-	MediaDir     string
-	MaxUploadMB  int64
-	SessionTTL   time.Duration
-	BaseURL      string
-	Dev          bool
+	Addr        string
+	Users       []UserConfig
+	DBPath      string
+	DBKey       string
+	MediaDir    string
+	MaxUploadMB int64
+	SessionTTL  time.Duration
+	BaseURL     string
+	Dev         bool
 }
 
 func Load() (*Config, error) {
@@ -37,22 +37,8 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid WHISPER_SESSION_TTL: %w", err)
 	}
 
-	u1Pass := os.Getenv("WHISPER_USER1_PASS")
-	u2Pass := os.Getenv("WHISPER_USER2_PASS")
-	if u1Pass == "" || u2Pass == "" {
-		return nil, fmt.Errorf("WHISPER_USER1_PASS and WHISPER_USER2_PASS must be set")
-	}
-
 	cfg := &Config{
-		Addr: envOr("WHISPER_ADDR", ":8080"),
-		User1: UserConfig{
-			Name:    envOr("WHISPER_USER1_NAME", "alice"),
-			RawPass: u1Pass,
-		},
-		User2: UserConfig{
-			Name:    envOr("WHISPER_USER2_NAME", "bob"),
-			RawPass: u2Pass,
-		},
+		Addr:        envOr("WHISPER_ADDR", ":8080"),
 		DBPath:      envOr("WHISPER_DB_PATH", "./data/whisper.db"),
 		DBKey:       os.Getenv("WHISPER_DB_KEY"),
 		MediaDir:    envOr("WHISPER_MEDIA_DIR", "./data/media"),
@@ -60,6 +46,35 @@ func Load() (*Config, error) {
 		SessionTTL:  sessionTTL,
 		BaseURL:     os.Getenv("WHISPER_BASE_URL"),
 		Dev:         os.Getenv("WHISPER_DEV") == "true",
+	}
+
+	// Load users from users.json (primary) or fall back to env vars (backward compat)
+	usersFile := envOr("WHISPER_USERS_FILE", "./users.json")
+	if data, err := os.ReadFile(usersFile); err == nil {
+		var users []UserConfig
+		if err := json.Unmarshal(data, &users); err != nil {
+			return nil, fmt.Errorf("parse %s: %w", usersFile, err)
+		}
+		for i, u := range users {
+			if u.Name == "" || u.Password == "" {
+				return nil, fmt.Errorf("user %d in %s: name and password required", i, usersFile)
+			}
+		}
+		if len(users) < 2 {
+			return nil, fmt.Errorf("%s must have at least 2 users", usersFile)
+		}
+		cfg.Users = users
+	} else {
+		// Fallback: env vars (backward compatible with 2-user setup)
+		u1Pass := os.Getenv("WHISPER_USER1_PASS")
+		u2Pass := os.Getenv("WHISPER_USER2_PASS")
+		if u1Pass == "" || u2Pass == "" {
+			return nil, fmt.Errorf("no users.json found and WHISPER_USER1_PASS/WHISPER_USER2_PASS not set")
+		}
+		cfg.Users = []UserConfig{
+			{Name: envOr("WHISPER_USER1_NAME", "alice"), Password: u1Pass},
+			{Name: envOr("WHISPER_USER2_NAME", "bob"), Password: u2Pass},
+		}
 	}
 
 	return cfg, nil

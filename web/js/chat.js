@@ -318,11 +318,14 @@
         reader.readAsDataURL(file);
         e.target.value = '';
     });
-    // Double-click wallpaper button to remove
-    $('wallpaper-btn').addEventListener('dblclick', () => {
+    // Clear wallpaper
+    $('clear-wallpaper-btn').addEventListener('click', () => {
         localStorage.removeItem('whisper_wallpaper');
-        $('messages').style.backgroundImage = '';
-        showToast('Wallpaper removed');
+        const m = $('messages');
+        m.style.backgroundImage = '';
+        m.style.backgroundSize = '';
+        m.style.backgroundPosition = '';
+        showToast('Wallpaper cleared');
     });
     function applyWallpaper() {
         const wp = localStorage.getItem('whisper_wallpaper');

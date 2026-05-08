@@ -71,13 +71,16 @@ func (h *Hub) Unregister(userID int) {
 	}
 	h.mu.Unlock()
 
+	// Update last_seen
+	db.UpdateLastSeen(h.db, userID)
+
 	// Get username for presence notification
 	user, err := db.GetUserByID(h.db, userID)
 	if err == nil {
 		h.broadcast(OutgoingMessage{
 			Type: "presence",
 			User: &UserInfo{ID: userID, Username: user.Username},
-			Data: map[string]any{"online": false},
+			Data: map[string]any{"online": false, "last_seen": user.LastSeen},
 		}, 0)
 	}
 }

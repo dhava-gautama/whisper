@@ -135,13 +135,71 @@
         isPageVisible = !document.hidden;
         if (isPageVisible) {
             unreadCount = 0; document.title = 'Whisper';
+            setFaviconBadge(0);
             hasUnreadSep = false;
             const sep = $('unread-sep');
             if (sep) setTimeout(() => sep.remove(), 3000);
         }
     });
 
+    // Favicon badge
+    const origFavicon = document.querySelector('link[rel="icon"]')?.href;
+    function setFaviconBadge(count) {
+        const link = document.querySelector('link[rel="icon"]');
+        if (!link) return;
+        if (count <= 0) { link.href = origFavicon; return; }
+        const canvas = document.createElement('canvas');
+        canvas.width = 32; canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, 32, 32);
+            ctx.fillStyle = '#e05264';
+            ctx.beginPath(); ctx.arc(24, 8, 8, 0, 2 * Math.PI); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(count > 9 ? '9+' : String(count), 24, 8.5);
+            link.href = canvas.toDataURL();
+        };
+        img.src = origFavicon;
+    }
+
+    // Fetch initial user statuses (last seen, online)
+    async function fetchUsers() {
+        try {
+            const r = await fetch('/api/users');
+            const d = await r.json();
+            if (d.users) {
+                d.users.forEach(u => {
+                    $('peer-name').textContent = u.username;
+                    if (u.online) {
+                        $('peer-dot').className = 'dot online';
+                        $('peer-status').querySelector('#peer-name').textContent = u.username;
+                    } else {
+                        $('peer-dot').className = 'dot offline';
+                        const ls = u.last_seen ? fmtLastSeen(u.last_seen) : '';
+                        $('peer-name').textContent = u.username + (ls ? ' — ' + ls : '');
+                    }
+                });
+            }
+        } catch {}
+    }
+
+    function fmtLastSeen(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const now = new Date();
+        const diff = Math.floor((now - d) / 1000);
+        if (diff < 60) return 'last seen just now';
+        if (diff < 3600) return 'last seen ' + Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return 'last seen ' + Math.floor(diff / 3600) + 'h ago';
+        return 'last seen ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
     // Init
+    fetchUsers();
     loadMessages().then(() => connectWS());
     messageInput.focus();
 
@@ -304,6 +362,36 @@
 
     // Export
     $('export-btn').addEventListener('click', () => { window.location.href = '/api/messages/export'; });
+
+    // Password change
+    $('change-password-btn').addEventListener('click', () => {
+        $('password-modal').hidden = false;
+        $('old-pass').value = '';
+        $('new-pass').value = '';
+        $('pass-error').hidden = true;
+        $('old-pass').focus();
+    });
+    $('pass-cancel').addEventListener('click', () => $('password-modal').hidden = true);
+    $('pass-save').addEventListener('click', async () => {
+        const oldP = $('old-pass').value;
+        const newP = $('new-pass').value;
+        if (!oldP || !newP) return;
+        try {
+            const r = await fetch('/api/password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                body: JSON.stringify({ old_password: oldP, new_password: newP }),
+            });
+            if (!r.ok) {
+                const d = await r.json();
+                $('pass-error').textContent = d.error || 'Failed';
+                $('pass-error').hidden = false;
+                return;
+            }
+            $('password-modal').hidden = true;
+            showToast('Password changed');
+        } catch { showToast('Error changing password', 'error'); }
+    });
 
     // Wallpaper
     $('wallpaper-btn').addEventListener('click', () => $('wallpaper-input').click());
@@ -468,6 +556,7 @@
         if (!isPageVisible && msg.user.id !== currentUserID) {
             unreadCount++;
             document.title = `(${unreadCount}) Whisper`;
+            setFaviconBadge(unreadCount);
             if (soundEnabled) notifSound();
             // Browser push notification
             if ('Notification' in window && Notification.permission === 'granted') {
@@ -496,8 +585,14 @@
 
     function onPresence(msg) {
         if (msg.user.id === currentUserID) return;
-        $('peer-name').textContent = msg.user.username;
-        $('peer-dot').className = 'dot ' + (msg.data?.online ? 'online' : 'offline');
+        const online = msg.data?.online;
+        $('peer-dot').className = 'dot ' + (online ? 'online' : 'offline');
+        if (online) {
+            $('peer-name').textContent = msg.user.username;
+        } else {
+            const ls = msg.data?.last_seen ? fmtLastSeen(msg.data.last_seen) : 'offline';
+            $('peer-name').textContent = msg.user.username + ' — ' + ls;
+        }
     }
 
     function onReaction(msg) {

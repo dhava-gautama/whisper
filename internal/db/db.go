@@ -110,6 +110,9 @@ func Migrate(db *sql.DB) error {
 			user_id       INTEGER PRIMARY KEY REFERENCES users(id),
 			last_read_id  INTEGER NOT NULL DEFAULT 0
 		);`,
+
+		// Migration 2: Add last_seen to users
+		`ALTER TABLE users ADD COLUMN last_seen TEXT NOT NULL DEFAULT '';`,
 	}
 
 	for i, m := range migrations {

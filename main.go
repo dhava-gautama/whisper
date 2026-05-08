@@ -155,6 +155,16 @@ func main() {
 		handleStorage(w, cfg)
 	})))
 
+	// API: Change password
+	mux.Handle("POST /api/password", auth.RequireAuth(database, auth.RequireCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlePasswordChange(w, r, database)
+	}))))
+
+	// API: Users status (for initial presence/last_seen)
+	mux.Handle("GET /api/users", auth.RequireAuth(database, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handleUsers(w, r, database, hub)
+	})))
+
 	// WebSocket
 	mux.Handle("GET /ws", auth.RequireAuth(database, http.HandlerFunc(chat.WSHandler(hub, database))))
 
@@ -385,6 +395,77 @@ func handleMediaList(w http.ResponseWriter, r *http.Request, database *sql.DB) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{"media": items})
+}
+
+func handlePasswordChange(w http.ResponseWriter, r *http.Request, database *sql.DB) {
+	user := auth.GetUser(r.Context())
+	if user == nil {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.NewPassword) < 4 {
+		http.Error(w, `{"error":"password too short (min 4 chars)"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Verify old password
+	u, err := db.GetUserByID(database, user.ID)
+	if err != nil {
+		http.Error(w, `{"error":"user not found"}`, http.StatusInternalServerError)
+		return
+	}
+	valid, _ := auth.VerifyPassword(u.PassHash, req.OldPassword)
+	if !valid {
+		http.Error(w, `{"error":"current password is wrong"}`, http.StatusUnauthorized)
+		return
+	}
+
+	// Hash and update
+	newHash, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		return
+	}
+	if err := db.UpdatePassword(database, user.ID, newHash); err != nil {
+		http.Error(w, `{"error":"failed to update password"}`, http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("password changed", "user", user.Username)
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, `{"ok":true}`)
+}
+
+func handleUsers(w http.ResponseWriter, r *http.Request, database *sql.DB, hub *chat.Hub) {
+	currentUser := auth.GetUser(r.Context())
+	users, err := db.GetAllUsers(database)
+	if err != nil {
+		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		return
+	}
+	var out []map[string]any
+	for _, u := range users {
+		if u.ID == currentUser.ID {
+			continue
+		}
+		out = append(out, map[string]any{
+			"id":        u.ID,
+			"username":  u.Username,
+			"online":    hub.IsOnline(u.ID),
+			"last_seen": u.LastSeen,
+		})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"users": out})
 }
 
 func handleStorage(w http.ResponseWriter, cfg *config.Config) {

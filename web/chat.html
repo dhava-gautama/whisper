@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="manifest" href="/manifest.json">
     <title>Whisper</title>
-    <link rel="stylesheet" href="/css/style.css?v=1.0.1">
+    <link rel="stylesheet" href="/css/style.css?v=1.0.2">
 </head>
 <body class="chat-page">
     <header id="header">
@@ -45,6 +45,7 @@
                 <button id="wallpaper-btn"><span>Set wallpaper</span></button>
                 <button id="clear-wallpaper-btn"><span>Clear wallpaper</span></button>
                 <button id="export-btn"><span>Export chat</span></button>
+                <button id="change-password-btn"><span>Change password</span></button>
                 <hr>
                 <button id="logout-btn" class="danger"><span>Logout</span></button>
             </div>
@@ -174,6 +175,19 @@
         </button>
     </div>
 
-    <script src="/js/chat.js?v=1.0.1"></script>
+    <div id="password-modal" class="modal-overlay" hidden>
+        <div class="modal-card">
+            <h3>Change Password</h3>
+            <input type="password" id="old-pass" placeholder="Current password" autocomplete="current-password">
+            <input type="password" id="new-pass" placeholder="New password" autocomplete="new-password">
+            <div class="modal-actions">
+                <button id="pass-cancel" class="modal-btn">Cancel</button>
+                <button id="pass-save" class="modal-btn primary">Save</button>
+            </div>
+            <p id="pass-error" class="error" hidden></p>
+        </div>
+    </div>
+
+    <script src="/js/chat.js?v=1.0.2"></script>
 </body>
 </html>

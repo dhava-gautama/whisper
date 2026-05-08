@@ -30,6 +30,8 @@ var allowedMIME = map[string]bool{
 	"audio/mp4":                true,
 	"audio/mpeg":               true,
 	"audio/wav":                true,
+	"video/webm":               true,
+	"video/ogg":                true,
 	"application/octet-stream": true,
 }
 
@@ -73,9 +75,29 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		contentType = strings.TrimSpace(contentType[:idx])
 	}
 
+	// Fallback: if detection gives generic type, check file extension
+	if contentType == "application/octet-stream" || contentType == "text/plain" {
+		ext := strings.ToLower(path.Ext(header.Filename))
+		extMap := map[string]string{
+			".webm": "audio/webm", ".ogg": "audio/ogg", ".mp3": "audio/mpeg",
+			".mp4": "audio/mp4", ".wav": "audio/wav", ".m4a": "audio/mp4",
+			".pdf": "application/pdf", ".zip": "application/zip",
+			".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+			".gif": "image/gif", ".webp": "image/webp",
+		}
+		if mapped, ok := extMap[ext]; ok {
+			contentType = mapped
+		}
+	}
+
 	if !allowedMIME[contentType] {
 		http.Error(w, `{"error":"file type not allowed"}`, http.StatusBadRequest)
 		return
+	}
+
+	// Normalize video/webm to audio/webm for voice recordings
+	if contentType == "video/webm" || contentType == "video/ogg" {
+		contentType = strings.Replace(contentType, "video/", "audio/", 1)
 	}
 
 	// Seek back to start

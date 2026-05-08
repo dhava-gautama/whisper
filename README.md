@@ -6,6 +6,15 @@ Private self-hosted chat room for two. Sakura Falls theme.
 ![SQLite](https://img.shields.io/badge/SQLite-encrypted-003B57?logo=sqlite)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshot-login.png" width="200" alt="Login">
+  <img src="docs/screenshot-dark.png" width="200" alt="Dark Sakura">
+  <img src="docs/screenshot-light.png" width="200" alt="Light Sakura">
+  <img src="docs/screenshot-menu.png" width="200" alt="Menu">
+</p>
+
 ## Features
 
 **Chat**
@@ -66,25 +75,91 @@ go run .
 
 Open `http://localhost:8080` and enter either password to login.
 
-## Docker Deployment
+## Deployment
+
+### Option A: Docker + Caddy (auto-TLS)
 
 ```bash
-# Copy and edit environment file
 cp .env.example .env
-nano .env
+nano .env                    # set passwords + DB key
 
-# Start
+# Edit Caddyfile with your domain
+nano Caddyfile
+
 docker compose up -d
 ```
 
-Edit `Caddyfile` to set your domain:
-```
-whisper.yourdomain.com {
-    reverse_proxy whisper:8080
-}
+Caddy handles TLS automatically via Let's Encrypt.
+
+### Option B: Docker + Cloudflare (recommended)
+
+If you use Cloudflare for DNS, you can skip Caddy entirely and expose Whisper directly behind Cloudflare's proxy.
+
+1. **`docker-compose.yml`** — remove the caddy service, expose whisper directly:
+
+```yaml
+services:
+  whisper:
+    build: .
+    container_name: whisper
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file: .env
+    volumes:
+      - whisper_data:/app/data
+
+volumes:
+  whisper_data:
 ```
 
-Caddy handles TLS automatically via Let's Encrypt.
+2. **`.env`** — add your passwords:
+
+```
+WHISPER_USER1_PASS=your_password_1
+WHISPER_USER2_PASS=your_password_2
+WHISPER_DB_KEY=your_encryption_key
+```
+
+3. **Cloudflare Dashboard**:
+   - Add an A record pointing to your server IP
+   - Enable the orange cloud (proxy)
+   - SSL/TLS mode: **Full (strict)** if you have an origin cert, or **Full**
+   - Under Network: enable **WebSockets**
+
+4. **Cloudflare Tunnel** (alternative — no open ports needed):
+
+```bash
+# Install cloudflared
+cloudflared tunnel create whisper
+cloudflared tunnel route dns whisper whisper.yourdomain.com
+
+# Run tunnel
+cloudflared tunnel --url http://localhost:8080 run whisper
+```
+
+5. **Start**:
+
+```bash
+docker compose up -d
+```
+
+> **Important**: When using Cloudflare proxy, set `WHISPER_DEV=true` in your `.env` so cookies work over HTTP between Cloudflare and your origin. Cloudflare terminates TLS at the edge, so the connection to your server may be HTTP internally. Alternatively, set up a Cloudflare origin certificate for full end-to-end encryption.
+
+### Option C: Bare metal
+
+```bash
+# Build
+go build -o whisper .
+
+# Run
+WHISPER_USER1_PASS=pass1 WHISPER_USER2_PASS=pass2 ./whisper
+
+# Or with systemd
+sudo cp whisper /usr/local/bin/
+sudo nano /etc/systemd/system/whisper.service
+sudo systemctl enable --now whisper
+```
 
 ## Configuration
 

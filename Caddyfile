@@ -1,0 +1,7 @@
+whisper.yourdomain.com {
+    reverse_proxy whisper:8080 {
+        transport http {
+            read_buffer 8192
+        }
+    }
+}

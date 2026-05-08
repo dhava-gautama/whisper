@@ -1,0 +1,39 @@
+services:
+  whisper:
+    build: .
+    container_name: whisper
+    restart: unless-stopped
+    environment:
+      WHISPER_USER1_NAME: "alice"
+      WHISPER_USER1_PASS: "${WHISPER_USER1_PASS}"
+      WHISPER_USER2_NAME: "bob"
+      WHISPER_USER2_PASS: "${WHISPER_USER2_PASS}"
+      WHISPER_DB_KEY: "${WHISPER_DB_KEY}"
+      WHISPER_MAX_UPLOAD_MB: "50"
+    volumes:
+      - whisper_data:/app/data
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+
+networks:
+  internal:
+
+volumes:
+  whisper_data:
+  caddy_data:
+  caddy_config:
